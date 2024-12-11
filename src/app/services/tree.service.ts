@@ -1,5 +1,5 @@
-import { Injectable, Inject } from '@angular/core';
-import { Firestore, collection, doc, setDoc, getDoc, updateDoc, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { Injectable } from '@angular/core';
+import { Firestore, collection, doc, setDoc, getDoc, updateDoc, query, where, orderBy, getDocs, addDoc } from '@angular/fire/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { Auth } from '@angular/fire/auth';
 
@@ -25,13 +25,9 @@ export interface Tree {
 })
 export class TreeService {
   constructor(
-    @Inject('FIRESTORE_DB') private db: Firestore,
+    private firestore: Firestore,
     private auth: Auth
-  ) {
-    if (!this.db) {
-      throw new Error('Firestore instance not properly initialized');
-    }
-  }
+  ) {}
 
   async createNewTree(name: string): Promise<string> {
     try {
@@ -39,17 +35,18 @@ export class TreeService {
       if (!user) throw new Error('Must be logged in to create a tree');
 
       const treeId = uuidv4();
-      const treeRef = doc(collection(this.db, 'trees'), treeId);
+      const treeRef = doc(this.firestore, 'trees', treeId);
 
-      await setDoc(treeRef, {
+      const newTree: Tree = {
         id: treeId,
-        name,
+        name: name,
         createdAt: new Date(),
         ornaments: [],
         creatorId: user.uid,
         creatorName: user.displayName || 'Anonymous'
-      });
+      };
 
+      await setDoc(treeRef, newTree);
       return treeId;
     } catch (error) {
       console.error('Error creating tree:', error);
@@ -61,7 +58,7 @@ export class TreeService {
     const user = this.auth.currentUser;
     if (!user) throw new Error('Must be logged in to fetch trees');
 
-    const treesRef = collection(this.db, 'trees');
+    const treesRef = collection(this.firestore, 'trees');
     const q = query(treesRef, where('creatorId', '==', user.uid), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
 
@@ -69,7 +66,7 @@ export class TreeService {
   }
 
   async getTree(treeId: string): Promise<Tree | null> {
-    const treeRef = doc(collection(this.db, 'trees'), treeId);
+    const treeRef = doc(this.firestore, 'trees', treeId);
     const treeDoc = await getDoc(treeRef);
 
     if (treeDoc.exists()) {
@@ -80,22 +77,35 @@ export class TreeService {
   }
 
   async addOrnament(treeId: string, ornament: Omit<Ornament, 'id'>): Promise<string> {
-    const treeRef = doc(collection(this.db, 'trees'), treeId);
-    const tree = await this.getTree(treeId);
+    try {
+      console.log('Adding ornament with data:', ornament);
 
-    if (!tree) throw new Error('Tree not found');
+      const treeRef = doc(this.firestore, 'trees', treeId);
+      const treeDoc = await getDoc(treeRef);
 
-    const newOrnament = {
-      ...ornament,
-      id: uuidv4()
-    };
+      if (!treeDoc.exists()) {
+        throw new Error('Tree not found');
+      }
 
-    const updatedOrnaments = [...tree.ornaments, newOrnament];
+      const tree = treeDoc.data() as Tree;
+      const newOrnament: Ornament = {
+        ...ornament,
+        id: uuidv4()
+      };
 
-    await updateDoc(treeRef, {
-      ornaments: updatedOrnaments
-    });
+      const updatedOrnaments = Array.isArray(tree.ornaments) ? [...tree.ornaments] : [];
+      updatedOrnaments.push(newOrnament);
 
-    return newOrnament.id;
+      console.log('Updating with ornaments:', updatedOrnaments);
+
+      await updateDoc(treeRef, {
+        ornaments: updatedOrnaments
+      });
+
+      return newOrnament.id;
+    } catch (error) {
+      console.error('Error in addOrnament:', error);
+      throw error;
+    }
   }
 }

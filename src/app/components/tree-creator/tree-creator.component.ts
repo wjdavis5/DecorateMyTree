@@ -6,6 +6,7 @@ import { TreeService } from '../../services/tree.service';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { Auth } from '@angular/fire/auth';
 
 @Component({
   selector: 'app-tree-creator',
@@ -117,7 +118,11 @@ export class TreeCreatorComponent implements AfterViewInit {
   private controls!: OrbitControls;
   isCreating = false;
 
-  constructor(private treeService: TreeService, private router: Router) {}
+  constructor(
+    private treeService: TreeService,
+    private router: Router,
+    private auth: Auth
+  ) {}
 
   ngAfterViewInit() {
     this.initThreeJS();
@@ -219,11 +224,23 @@ export class TreeCreatorComponent implements AfterViewInit {
 
     try {
       this.isCreating = true;
-      const treeId = await this.treeService.createNewTree();
-      await this.router.navigate(['/tree', treeId]);
+      console.log('Creating tree, checking auth...');
+
+      if (!this.auth.currentUser) {
+        console.log('User not authenticated, redirecting to auth...');
+        localStorage.setItem('postLoginAction', 'createTree');
+        await this.router.navigate(['/auth']);
+        this.isCreating = false;
+        return;
+      }
+
+      console.log('User authenticated, creating tree...');
+      const treeId = await this.treeService.createNewTree("My Tree");
+      await this.router.navigate(['/decorator', treeId]);
     } catch (error) {
       console.error('Error creating tree:', error);
-      // Here you might want to show an error message to the user
+      // Add user feedback
+      // You might want to inject MatSnackBar and show an error message
     } finally {
       this.isCreating = false;
     }

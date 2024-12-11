@@ -1,10 +1,11 @@
-import { Component, ElementRef, OnInit, AfterViewInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, AfterViewInit, ViewChild, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatCardModule } from '@angular/material/card';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TreeService, Tree, Ornament } from '../../services/tree.service';
@@ -12,6 +13,7 @@ import { OrnamentService, OrnamentDesign } from '../../services/ornament.service
 import { OrnamentSelectorComponent } from '../ornament-selector/ornament-selector.component';
 import { MessageCardComponent } from '../message-card/message-card.component'
 import { ShareDialogComponent } from '../share-dialog/share-dialog.component'
+import { OrnamentMessageComponent } from '../ornament-message/ornament-message.component';
 
 @Component({
   selector: 'app-tree-decorator',
@@ -22,9 +24,11 @@ import { ShareDialogComponent } from '../share-dialog/share-dialog.component'
     MatButtonModule,
     MatDialogModule,
     MatCardModule,
+    MatProgressSpinnerModule,
     OrnamentSelectorComponent,
     MessageCardComponent,
-    ShareDialogComponent
+    ShareDialogComponent,
+    OrnamentMessageComponent
   ],
   template: `
     <div class="container">
@@ -40,6 +44,12 @@ import { ShareDialogComponent } from '../share-dialog/share-dialog.component'
         <button mat-raised-button color="accent" (click)="shareTree()">
           Share Tree
         </button>
+      </div>
+      <div class="message-container" *ngIf="showMessageCard">
+        <app-message-card
+          (submit)="onMessageSubmit($event)"
+          (cancel)="onMessageCancel()">
+        </app-message-card>
       </div>
     </div>
   `,
@@ -100,9 +110,20 @@ import { ShareDialogComponent } from '../share-dialog/share-dialog.component'
       transform: translateY(-2px);
       box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
     }
+
+    .message-container {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2000;
+      background-color: rgba(255, 255, 255, 0.9);
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
   `]
 })
-export class TreeDecoratorComponent implements OnInit, AfterViewInit {
+export class TreeDecoratorComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('rendererCanvas') rendererCanvas!: ElementRef<HTMLCanvasElement>;
 
   private renderer!: THREE.WebGLRenderer;
@@ -112,9 +133,12 @@ export class TreeDecoratorComponent implements OnInit, AfterViewInit {
   private raycaster = new THREE.Raycaster();
   private mouse = new THREE.Vector2();
 
-  private tree?: Tree;
+  public tree?: Tree;
   private treeId: string = '';
   private selectedOrnament?: OrnamentDesign;
+  showMessageCard = false;
+  pendingOrnamentPosition: { x: number; y: number; z: number } | null = null;
+  private isSubmitting = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -338,10 +362,13 @@ export class TreeDecoratorComponent implements OnInit, AfterViewInit {
       const clickedObject = intersects[0].object;
       if (clickedObject instanceof THREE.Mesh) {
         if (this.selectedOrnament) {
-          // Adding new ornament
+          // Adding new ornament - show message card first
           const point = intersects[0].point;
-          this.createOrnamentMesh(this.selectedOrnament, point);
-          this.openMessageDialog(point);
+          this.addOrnament({
+            x: point.x,
+            y: point.y,
+            z: point.z
+          });
         } else if (clickedObject.userData['ornamentData']) {
           // Viewing existing ornament message
           this.showOrnamentMessage(clickedObject.userData['ornamentData']);
@@ -363,41 +390,52 @@ export class TreeDecoratorComponent implements OnInit, AfterViewInit {
     });
   }
 
-  private openMessageDialog(position: THREE.Vector3) {
-    const dialogRef = this.dialog.open(MessageCardComponent, {
-      width: '400px'
-    });
+  private addOrnament(position: { x: number; y: number; z: number }) {
+    console.log('Adding ornament at position:', position); // Debug log
+    this.showMessageCard = true;
+    this.pendingOrnamentPosition = position;
+  }
 
-    dialogRef.afterClosed().subscribe(async (message: string) => {
-      if (message && this.selectedOrnament && this.tree) {
-        const newOrnament = {
-          type: this.selectedOrnament.id,
-          position: {
-            x: position.x,
-            y: position.y,
-            z: position.z
-          },
-          message,
-          decoratorName: 'Anonymous'
-        };
+  async onMessageSubmit(messageData: { name: string; message: string }) {
+    if (!this.pendingOrnamentPosition || !this.selectedOrnament || this.isSubmitting) return;
 
-        await this.treeService.addOrnament(this.treeId, newOrnament);
-        this.tree.ornaments.push({
-          ...newOrnament,
-          id: 'temp-id' // The actual ID will be updated on next load
-        });
-        this.selectedOrnament = undefined;
-      }
-    });
+    try {
+      this.isSubmitting = true;
+      const ornament: Omit<Ornament, 'id'> = {
+        type: this.selectedOrnament.id,
+        position: this.pendingOrnamentPosition,
+        message: messageData.message,
+        decoratorName: messageData.name
+      };
+
+      await this.treeService.addOrnament(this.treeId, ornament);
+      const position = new THREE.Vector3(
+        this.pendingOrnamentPosition.x,
+        this.pendingOrnamentPosition.y,
+        this.pendingOrnamentPosition.z
+      );
+      this.createOrnamentMesh(this.selectedOrnament, position);
+    } catch (error) {
+      console.error('Error adding ornament:', error);
+    } finally {
+      this.showMessageCard = false;
+      this.pendingOrnamentPosition = null;
+      this.selectedOrnament = undefined;
+      this.isSubmitting = false;
+    }
+  }
+
+  onMessageCancel() {
+    this.showMessageCard = false;
+    this.pendingOrnamentPosition = null;
   }
 
   private showOrnamentMessage(ornamentData: Ornament) {
-    this.dialog.open(MessageCardComponent, {
+    this.dialog.open(OrnamentMessageComponent, {
       width: '400px',
       data: {
         message: ornamentData.message,
-        decoratorName: ornamentData.decoratorName,
-        readonly: true
+        decoratorName: ornamentData.decoratorName
       }
     });
   }
@@ -408,5 +446,11 @@ export class TreeDecoratorComponent implements OnInit, AfterViewInit {
       width: '400px',
       data: { url: treeUrl }
     });
+  }
+
+  ngOnDestroy() {
+    // Clean up THREE.js resources
+    this.renderer?.dispose();
+    this.scene?.clear();
   }
 }

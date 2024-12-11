@@ -1,127 +1,91 @@
-import { Component, Inject } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { MatDialogModule } from '@angular/material/dialog';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-
-interface DialogData {
-  message?: string;
-  decoratorName?: string;
-  readonly?: boolean;
-}
 
 @Component({
   selector: 'app-message-card',
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
-    MatDialogModule,
+    ReactiveFormsModule,
+    MatCardModule,
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule
   ],
   template: `
-    <h2 mat-dialog-title>{{ data?.readonly ? 'Holiday Message' : 'Write a Holiday Message' }}</h2>
-    <mat-dialog-content>
-      <mat-form-field appearance="fill" class="message-field">
-        <mat-label>{{ data?.readonly ? 'Message' : 'Your Message' }}</mat-label>
-        <textarea
-          matInput
-          [(ngModel)]="message"
-          [placeholder]="data?.readonly ? '' : 'Write your holiday wishes...'"
-          [readonly]="data?.readonly"
-          rows="4">
-        </textarea>
-        <mat-hint *ngIf="!data?.readonly">Your message will be attached to the ornament</mat-hint>
-        <mat-hint *ngIf="data?.readonly && data?.decoratorName">
-          From: {{ data.decoratorName }}
-        </mat-hint>
-      </mat-form-field>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button (click)="onCancel()">
-        {{ data?.readonly ? 'Close' : 'Cancel' }}
-      </button>
-      <button
-        *ngIf="!data?.readonly"
-        mat-raised-button
-        color="primary"
-        [disabled]="!message.trim()"
-        (click)="onConfirm()">
-        Add Message
-      </button>
-    </mat-dialog-actions>
+    <mat-card class="message-card">
+      <mat-card-header>
+        <mat-card-title>Add a Message</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="messageForm" (ngSubmit)="onSubmit()">
+          <mat-form-field appearance="fill">
+            <mat-label>Your Name</mat-label>
+            <input matInput formControlName="name" required>
+          </mat-form-field>
+          <mat-form-field appearance="fill">
+            <mat-label>Your Message</mat-label>
+            <textarea matInput formControlName="message" required rows="3"></textarea>
+          </mat-form-field>
+          <div class="actions">
+            <button mat-button type="button" (click)="onCancel()">Cancel</button>
+            <button mat-raised-button color="primary" type="submit" [disabled]="!messageForm.valid">
+              Add Message
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
   `,
   styles: [`
-    :host {
-      display: block;
+    .message-card {
+      max-width: 400px;
+      margin: 16px;
     }
 
-    h2 {
-      margin: 0;
-      padding: 16px;
-      background-color: #f5f5f5;
-      border-bottom: 1px solid #e0e0e0;
-    }
-
-    .message-field {
+    mat-form-field {
       width: 100%;
+      margin-bottom: 16px;
     }
 
-    mat-dialog-content {
-      min-width: 300px;
-      padding: 20px;
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
     }
 
-    ::ng-deep {
-      .mat-mdc-dialog-actions {
-        padding: 16px !important;
-        margin: 0 !important;
-        background-color: #f5f5f5;
-        border-top: 1px solid #e0e0e0;
-        display: flex !important;
-        justify-content: flex-end !important;
-        gap: 8px !important;
-      }
-
-      .mdc-button {
-        min-width: 100px !important;
-        height: 36px !important;
-      }
-
-      .mat-mdc-raised-button {
-        background-color: #1976d2 !important;
-        color: white !important;
-      }
-
-      button[mat-button] {
-        background-color: #f44336 !important;
-        color: white !important;
-      }
+    textarea {
+      resize: none;
     }
   `]
 })
 export class MessageCardComponent {
-  message: string = '';
+  @Output() submit = new EventEmitter<{name: string; message: string}>();
+  @Output() cancel = new EventEmitter<void>();
 
-  constructor(
-    public dialogRef: MatDialogRef<MessageCardComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: DialogData
-  ) {
-    if (data?.message) {
-      this.message = data.message;
+  messageForm: FormGroup;
+
+  constructor(private fb: FormBuilder) {
+    this.messageForm = this.fb.group({
+      name: ['', Validators.required],
+      message: ['', Validators.required]
+    });
+  }
+
+  onSubmit() {
+    if (this.messageForm.valid) {
+      this.submit.emit(this.messageForm.value);
+      this.messageForm.reset();
     }
   }
 
-  onCancel(): void {
-    this.dialogRef.close();
-  }
-
-  onConfirm(): void {
-    this.dialogRef.close(this.message.trim());
+  onCancel() {
+    this.cancel.emit();
+    this.messageForm.reset();
   }
 }
