@@ -1,0 +1,6 @@
+name = "holiday-tree-app"
+main = "dist/holiday-tree-app/browser/index.html"
+compatibility_date = "2023-12-01"
+
+[site]
+bucket = "dist/holiday-tree-app/browser"

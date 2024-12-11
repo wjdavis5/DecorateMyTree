@@ -1,59 +1,85 @@
-# HolidayTreeApp
+# Holiday Tree App
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.0.2.
+A Progressive Web Application that allows users to create and share 3D holiday trees that can be decorated by friends and family. The app supports multiple holiday traditions including Christmas, Hanukkah, and Kwanzaa ornaments.
 
-## Development server
+## Features
 
-To start a local development server, run:
+- Create a 3D Christmas tree that can be viewed from any angle
+- Share your tree with a unique link
+- Decorators can add ornaments from different holiday traditions
+- Each ornament can include a personal message
+- Full PWA support for offline functionality
+- Real-time updates using Firebase
+- Deployed on Cloudflare Workers
 
+## Prerequisites
+
+- Node.js (v18 or later)
+- Angular CLI (v17)
+- Firebase account
+- Cloudflare account
+
+## Setup
+
+1. Clone the repository:
 ```bash
-ng serve
+git clone <repository-url>
+cd holiday-tree-app
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
+2. Install dependencies:
 ```bash
-ng generate component component-name
+npm install
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+3. Configure Firebase:
+   - Create a new Firebase project
+   - Enable Firestore Database
+   - Copy your Firebase configuration to `src/app/services/tree.service.ts`
 
+4. Configure Cloudflare:
+   - Create a Cloudflare Workers account
+   - Update `wrangler.toml` with your account details
+   - Install Wrangler CLI: `npm install -g wrangler`
+
+## Development
+
+Run the development server:
 ```bash
-ng generate --help
+npm start
 ```
 
 ## Building
 
-To build the project run:
-
+Build for production:
 ```bash
-ng build
+npm run build:prod
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Deployment
 
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
+Deploy to Cloudflare Workers:
 ```bash
-ng test
+npm run deploy
 ```
 
-## Running end-to-end tests
+## Architecture
 
-For end-to-end (e2e) testing, run:
+- Angular 17 with standalone components
+- Three.js for 3D rendering
+- Firebase Firestore for data storage
+- Angular Material for UI components
+- PWA features using @angular/service-worker
+- Cloudflare Workers for hosting
 
-```bash
-ng e2e
-```
+## Contributing
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a new Pull Request
 
-## Additional Resources
+## License
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+MIT
