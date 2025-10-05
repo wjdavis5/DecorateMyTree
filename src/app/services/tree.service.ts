@@ -9,6 +9,7 @@ export interface Ornament {
   position: { x: number; y: number; z: number };
   message: string;
   decoratorName: string;
+  createdAt?: Date | any;
 }
 
 export interface Tree {
@@ -90,7 +91,8 @@ export class TreeService {
       const tree = treeDoc.data() as Tree;
       const newOrnament: Ornament = {
         ...ornament,
-        id: uuidv4()
+        id: uuidv4(),
+        createdAt: new Date()
       };
 
       const updatedOrnaments = Array.isArray(tree.ornaments) ? [...tree.ornaments] : [];

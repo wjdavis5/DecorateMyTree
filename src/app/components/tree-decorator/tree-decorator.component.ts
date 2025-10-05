@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatIconModule } from '@angular/material/icon';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TreeService, Tree, Ornament } from '../../services/tree.service';
@@ -14,6 +15,7 @@ import { OrnamentSelectorComponent } from '../ornament-selector/ornament-selecto
 import { MessageCardComponent } from '../message-card/message-card.component'
 import { ShareDialogComponent } from '../share-dialog/share-dialog.component'
 import { OrnamentMessageComponent } from '../ornament-message/ornament-message.component';
+import { OrnamentGalleryComponent } from '../ornament-gallery/ornament-gallery.component';
 
 @Component({
   selector: 'app-tree-decorator',
@@ -25,10 +27,12 @@ import { OrnamentMessageComponent } from '../ornament-message/ornament-message.c
     MatDialogModule,
     MatCardModule,
     MatProgressSpinnerModule,
+    MatIconModule,
     OrnamentSelectorComponent,
     MessageCardComponent,
     ShareDialogComponent,
-    OrnamentMessageComponent
+    OrnamentMessageComponent,
+    OrnamentGalleryComponent
   ],
   template: `
     <div class="container">
@@ -39,10 +43,16 @@ import { OrnamentMessageComponent } from '../ornament-message/ornament-message.c
       <canvas #rendererCanvas></canvas>
       <div class="controls">
         <button mat-raised-button color="primary" (click)="openOrnamentSelector()">
+          <mat-icon>add_circle</mat-icon>
           Add Ornament
         </button>
+        <button mat-raised-button (click)="openGallery()" style="background-color: #667eea; color: white;">
+          <mat-icon>photo_library</mat-icon>
+          Gallery
+        </button>
         <button mat-raised-button color="accent" (click)="shareTree()">
-          Share Tree
+          <mat-icon>share</mat-icon>
+          Share
         </button>
       </div>
       <div class="message-container" *ngIf="showMessageCard">
@@ -176,17 +186,23 @@ export class TreeDecoratorComponent implements OnInit, AfterViewInit, OnDestroy 
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.0;
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.enableDamping = true;
+    this.controls.dampingFactor = 0.05;
 
     // Enhanced lighting setup
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     this.scene.add(ambientLight);
 
     // Main directional light (sun-like)
-    const mainLight = new THREE.DirectionalLight(0xffffff, 1);
+    const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
     mainLight.position.set(5, 5, 5);
     mainLight.castShadow = true;
+    mainLight.shadow.mapSize.width = 2048;
+    mainLight.shadow.mapSize.height = 2048;
     this.scene.add(mainLight);
 
     // Fill light
@@ -196,36 +212,135 @@ export class TreeDecoratorComponent implements OnInit, AfterViewInit, OnDestroy 
 
     // Rim light
     const rimLight = new THREE.DirectionalLight(0xffd700, 0.2);
-    rimLight.position.set(0, -5, 0);
+    rimLight.position.set(0, -2, -5);
     this.scene.add(rimLight);
 
-    this.camera.position.z = 5;
+    this.camera.position.set(0, 2, 5);
+    this.camera.lookAt(0, 2, 0);
 
     this.renderer.domElement.addEventListener('click', this.onCanvasClick.bind(this));
   }
 
   private createChristmasTree() {
-    // Create tree trunk
-    const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.2, 1, 32);
-    const trunkMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
+    // Create tree trunk with better texture
+    const trunkGeometry = new THREE.CylinderGeometry(0.25, 0.3, 1.2, 32);
+    const trunkMaterial = new THREE.MeshStandardMaterial({
+      color: 0x6d4c41,
+      roughness: 0.8,
+      metalness: 0.1
+    });
     const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-    trunk.position.y = -0.5;
+    trunk.position.y = -0.6;
+    trunk.castShadow = true;
+    trunk.receiveShadow = true;
     this.scene.add(trunk);
 
-    // Create tree layers
-    const layers = 4;
-    const treeColor = 0x228B22;
+    // Create tree layers with better materials and varied colors
+    const layers = 5;
+    const baseColor = 0x1b5e20;
 
     for (let i = 0; i < layers; i++) {
-      const coneGeometry = new THREE.ConeGeometry(
-        1.5 - (i * 0.3),
-        1.5,
-        32
-      );
-      const coneMaterial = new THREE.MeshPhongMaterial({ color: treeColor });
+      const radius = 1.8 - (i * 0.32);
+      const height = 1.4;
+      const coneGeometry = new THREE.ConeGeometry(radius, height, 32);
+      
+      // Vary the green color slightly for each layer for more depth
+      const colorVariation = Math.floor(Math.random() * 0x101010);
+      const layerColor = baseColor + colorVariation;
+      
+      const coneMaterial = new THREE.MeshStandardMaterial({
+        color: layerColor,
+        roughness: 0.7,
+        metalness: 0.1,
+        flatShading: false
+      });
+      
       const cone = new THREE.Mesh(coneGeometry, coneMaterial);
-      cone.position.y = i * 1;
+      cone.position.y = i * 0.9 + 0.2;
+      cone.castShadow = true;
+      cone.receiveShadow = true;
       this.scene.add(cone);
+    }
+
+    // Add a golden star on top
+    this.addTreeTopper();
+    
+    // Add sparkle lights
+    this.addSparkleLights();
+  }
+
+  private addTreeTopper() {
+    // Create a 5-pointed star
+    const starPoints = [];
+    const outerRadius = 0.3;
+    const innerRadius = 0.15;
+    const points = 5;
+
+    for (let i = 0; i < points * 2; i++) {
+      const radius = i % 2 === 0 ? outerRadius : innerRadius;
+      const angle = (i / (points * 2)) * Math.PI * 2 - Math.PI / 2;
+      starPoints.push(new THREE.Vector2(
+        Math.cos(angle) * radius,
+        Math.sin(angle) * radius
+      ));
+    }
+
+    const starShape = new THREE.Shape(starPoints);
+    const starGeometry = new THREE.ExtrudeGeometry(starShape, {
+      depth: 0.1,
+      bevelEnabled: true,
+      bevelThickness: 0.02,
+      bevelSize: 0.02,
+      bevelSegments: 3
+    });
+
+    const starMaterial = new THREE.MeshStandardMaterial({
+      color: 0xffd700,
+      metalness: 0.9,
+      roughness: 0.1,
+      emissive: 0xffaa00,
+      emissiveIntensity: 0.5
+    });
+
+    const star = new THREE.Mesh(starGeometry, starMaterial);
+    star.position.y = 5;
+    star.rotation.z = 0;
+    this.scene.add(star);
+  }
+
+  private addSparkleLights() {
+    // Add small colorful lights around the tree
+    const lightColors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff];
+    const numLights = 30;
+
+    for (let i = 0; i < numLights; i++) {
+      const angle = (i / numLights) * Math.PI * 2;
+      const layer = Math.floor(i / 6);
+      const radius = 1.5 - (layer * 0.32);
+      const height = layer * 0.9 + 0.2;
+
+      const light = new THREE.PointLight(
+        lightColors[i % lightColors.length],
+        0.5,
+        2
+      );
+      
+      light.position.set(
+        Math.cos(angle) * radius * 0.7,
+        height + (Math.random() - 0.5) * 0.3,
+        Math.sin(angle) * radius * 0.7
+      );
+
+      this.scene.add(light);
+
+      // Add small sphere to visualize the light
+      const lightGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+      const lightMaterial = new THREE.MeshBasicMaterial({
+        color: lightColors[i % lightColors.length]
+      });
+      const lightMesh = new THREE.Mesh(lightGeometry, lightMaterial);
+      lightMesh.position.copy(light.position);
+      this.scene.add(lightMesh);
     }
   }
 
@@ -445,6 +560,16 @@ export class TreeDecoratorComponent implements OnInit, AfterViewInit, OnDestroy 
     this.dialog.open(ShareDialogComponent, {
       width: '400px',
       data: { url: treeUrl }
+    });
+  }
+
+  openGallery() {
+    if (!this.tree) return;
+    
+    this.dialog.open(OrnamentGalleryComponent, {
+      width: '700px',
+      maxWidth: '90vw',
+      data: { ornaments: this.tree.ornaments }
     });
   }
 
