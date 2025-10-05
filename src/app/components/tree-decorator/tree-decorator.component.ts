@@ -39,6 +39,10 @@ import { OrnamentGalleryComponent } from '../ornament-gallery/ornament-gallery.c
       <div class="header">
         <h1>{{ tree?.name }}</h1>
         <p>Decorate {{ tree?.creatorName }}'s tree</p>
+        <div class="help-text" *ngIf="tree && tree.ornaments.length === 0">
+          <mat-icon>info</mat-icon>
+          <span>Click "Add Ornament" to place your first decoration on the tree!</span>
+        </div>
       </div>
       <canvas #rendererCanvas></canvas>
       <div class="controls">
@@ -48,7 +52,7 @@ import { OrnamentGalleryComponent } from '../ornament-gallery/ornament-gallery.c
         </button>
         <button mat-raised-button (click)="openGallery()" style="background-color: #667eea; color: white;">
           <mat-icon>photo_library</mat-icon>
-          Gallery
+          Gallery ({{ getOrnamentCount() }})
         </button>
         <button mat-raised-button color="accent" (click)="shareTree()">
           <mat-icon>share</mat-icon>
@@ -92,6 +96,34 @@ import { OrnamentGalleryComponent } from '../ornament-gallery/ornament-gallery.c
     .header p {
       margin: 4px 0 0;
       color: rgba(0, 0, 0, 0.6);
+    }
+
+    .help-text {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 8px 12px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 6px;
+      font-size: 14px;
+      animation: pulse 2s infinite;
+    }
+
+    .help-text mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.8;
+      }
     }
 
     canvas {
@@ -571,6 +603,10 @@ export class TreeDecoratorComponent implements OnInit, AfterViewInit, OnDestroy 
       maxWidth: '90vw',
       data: { ornaments: this.tree.ornaments }
     });
+  }
+
+  getOrnamentCount(): number {
+    return this.tree?.ornaments?.length || 0;
   }
 
   ngOnDestroy() {
