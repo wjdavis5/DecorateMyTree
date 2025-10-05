@@ -36,10 +36,14 @@ import { OrnamentGalleryComponent } from '../ornament-gallery/ornament-gallery.c
   ],
   template: `
     <div class="container">
-      <div class="header">
-        <h1>{{ tree?.name }}</h1>
-        <p>Decorate {{ tree?.creatorName }}'s tree</p>
-        <div class="help-text" *ngIf="tree && tree.ornaments.length === 0">
+      <div class="loading-overlay" *ngIf="!tree">
+        <mat-spinner diameter="60"></mat-spinner>
+        <p>Loading your holiday tree...</p>
+      </div>
+      <div class="header" *ngIf="tree">
+        <h1>{{ tree.name }}</h1>
+        <p>Decorate {{ tree.creatorName }}'s tree</p>
+        <div class="help-text" *ngIf="tree.ornaments.length === 0">
           <mat-icon>info</mat-icon>
           <span>Click "Add Ornament" to place your first decoration on the tree!</span>
         </div>
@@ -72,6 +76,27 @@ import { OrnamentGalleryComponent } from '../ornament-gallery/ornament-gallery.c
       width: 100%;
       height: 100vh;
       position: relative;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, #1a237e 0%, #0d47a1 50%, #01579b 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      color: white;
+    }
+
+    .loading-overlay p {
+      margin-top: 20px;
+      font-size: 1.2em;
+      animation: pulse 2s infinite;
     }
 
     .header {
@@ -138,6 +163,7 @@ import { OrnamentGalleryComponent } from '../ornament-gallery/ornament-gallery.c
       z-index: 1000;
       display: flex;
       gap: 10px;
+      flex-wrap: wrap;
     }
 
     button {
@@ -146,11 +172,52 @@ import { OrnamentGalleryComponent } from '../ornament-gallery/ornament-gallery.c
       border-radius: 24px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
       transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    button mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
     }
 
     button:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    @media (max-width: 768px) {
+      .header {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        transform: none;
+        padding: 12px 16px;
+        font-size: 0.9em;
+      }
+
+      .header h1 {
+        font-size: 18px;
+      }
+
+      .help-text {
+        font-size: 12px;
+        padding: 6px 10px;
+      }
+
+      .controls {
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
+        justify-content: center;
+      }
+
+      button {
+        font-size: 0.9em;
+        padding: 10px 16px;
+      }
     }
 
     .message-container {
@@ -188,6 +255,11 @@ export class TreeDecoratorComponent implements OnInit, AfterViewInit, OnDestroy 
     private ornamentService: OrnamentService,
     private dialog: MatDialog
   ) {}
+
+  private showNotification(message: string, duration: number = 3000) {
+    // For now, use console.log. In a real app, we'd use MatSnackBar
+    console.log('Notification:', message);
+  }
 
   async ngOnInit() {
     this.treeId = this.route.snapshot.params['id'];
