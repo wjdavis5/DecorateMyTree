@@ -90,6 +90,16 @@ Deploy to Cloudflare Workers:
 npm run deploy
 ```
 
+This will:
+1. Build the Angular application for production
+2. Deploy the built assets and Worker script to Cloudflare
+
+The Worker script (`worker.js`) handles:
+- Serving static assets with proper caching headers
+- SPA routing support (redirects to index.html for non-file paths)
+- Security headers (X-Frame-Options, CSP, etc.)
+- Asset optimization and caching strategies
+
 ## 🏗️ Architecture
 
 ### Frontend

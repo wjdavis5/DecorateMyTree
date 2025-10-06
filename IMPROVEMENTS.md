@@ -225,6 +225,25 @@ This document outlines all the improvements made to transform the Holiday Tree a
 - **Mobile Support**: Fully responsive
 - **Social Integration**: 4 sharing channels
 
+## 🌐 Deployment Architecture
+
+### Cloudflare Workers Migration
+- **Migrated from Cloudflare Pages to Workers** for better control and performance
+- **Custom Worker Script** (`worker.js`):
+  - Serves static assets with optimized caching
+  - Handles SPA routing (redirects non-file paths to index.html)
+  - Adds security headers (X-Frame-Options, X-Content-Type-Options, etc.)
+  - Implements cache strategies (1-year for assets, no-cache for HTML)
+- **Updated Configuration**:
+  - Modified `wrangler.toml` to use Workers format with assets binding
+  - Changed deploy command from `wrangler pages deploy` to `wrangler deploy`
+  - Added environment variables support
+- **Benefits**:
+  - Full control over request/response handling
+  - Edge computing for global performance
+  - Custom caching strategies
+  - Enhanced security header management
+
 ## 🚀 Production Readiness Checklist
 
 - ✅ Professional UI/UX design
@@ -241,6 +260,7 @@ This document outlines all the improvements made to transform the Holiday Tree a
 - ✅ Type safety
 - ✅ PWA support
 - ✅ Cross-browser compatible
+- ✅ Cloudflare Workers deployment
 
 ## 🎄 Conclusion
 

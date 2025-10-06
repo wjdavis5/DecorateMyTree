@@ -1,6 +1,12 @@
 name = "holiday-tree-app"
-main = "dist/holiday-tree-app/browser/index.html"
-compatibility_date = "2023-12-01"
+main = "worker.js"
+compatibility_date = "2024-01-01"
 
-[site]
-bucket = "dist/holiday-tree-app/browser"
+# Assets configuration for serving static files
+[assets]
+directory = "dist/holiday-tree-app/browser"
+binding = "ASSETS"
+
+# Environment variables (if needed)
+[vars]
+ENVIRONMENT = "production"
