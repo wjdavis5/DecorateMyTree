@@ -245,6 +245,9 @@ export class TreeCreatorComponent implements AfterViewInit {
     
     // Add sparkle lights
     this.addSparkleLights();
+    
+    // Add snow particles
+    this.addSnowEffect();
   }
 
   private addTreeTopper() {
@@ -322,9 +325,67 @@ export class TreeCreatorComponent implements AfterViewInit {
     }
   }
 
+  private snowParticles: THREE.Points | null = null;
+
+  private addSnowEffect() {
+    const particleCount = 200;
+    const particles = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const velocities = [];
+
+    for (let i = 0; i < particleCount; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * 10;
+      positions[i * 3 + 1] = Math.random() * 10;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
+      
+      velocities.push({
+        x: (Math.random() - 0.5) * 0.01,
+        y: -0.02 - Math.random() * 0.02,
+        z: (Math.random() - 0.5) * 0.01
+      });
+    }
+
+    particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    const particleMaterial = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 0.08,
+      transparent: true,
+      opacity: 0.8,
+      sizeAttenuation: true
+    });
+
+    this.snowParticles = new THREE.Points(particles, particleMaterial);
+    this.snowParticles.userData['velocities'] = velocities;
+    this.scene.add(this.snowParticles);
+  }
+
+  private updateSnow() {
+    if (!this.snowParticles) return;
+
+    const positions = this.snowParticles.geometry.attributes['position'].array as Float32Array;
+    const velocities = this.snowParticles.userData['velocities'];
+
+    for (let i = 0; i < positions.length / 3; i++) {
+      positions[i * 3] += velocities[i].x;
+      positions[i * 3 + 1] += velocities[i].y;
+      positions[i * 3 + 2] += velocities[i].z;
+
+      // Reset particle if it falls below a threshold
+      if (positions[i * 3 + 1] < -2) {
+        positions[i * 3 + 1] = 8;
+        positions[i * 3] = (Math.random() - 0.5) * 10;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
+      }
+    }
+
+    this.snowParticles.geometry.attributes['position'].needsUpdate = true;
+  }
+
   private animate() {
     requestAnimationFrame(() => this.animate());
     this.controls.update();
+    this.updateSnow();
     this.renderer.render(this.scene, this.camera);
   }
 

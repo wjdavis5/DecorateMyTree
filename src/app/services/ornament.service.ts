@@ -47,6 +47,46 @@ export class OrnamentService {
       geometry: 'sphere',
       scale: 0.15
     },
+    {
+      id: 'blue-ball',
+      name: 'Royal Blue',
+      type: 'Christmas',
+      color: '#0047AB',
+      geometry: 'sphere',
+      scale: 0.15
+    },
+    {
+      id: 'pink-ball',
+      name: 'Rose Pink',
+      type: 'Christmas',
+      color: '#ff69b4',
+      geometry: 'sphere',
+      scale: 0.15
+    },
+    {
+      id: 'purple-ball',
+      name: 'Royal Purple',
+      type: 'Christmas',
+      color: '#9932cc',
+      geometry: 'sphere',
+      scale: 0.15
+    },
+    {
+      id: 'white-star',
+      name: 'Silver Star',
+      type: 'Christmas',
+      color: '#e6e6fa',
+      geometry: 'star',
+      scale: 0.18
+    },
+    {
+      id: 'copper-ball',
+      name: 'Copper Shine',
+      type: 'Christmas',
+      color: '#b87333',
+      geometry: 'sphere',
+      scale: 0.15
+    },
     // Hanukkah Ornaments
     {
       id: 'blue-dreidel',
