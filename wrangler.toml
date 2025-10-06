@@ -1,4 +1,4 @@
-name = "holiday-tree-app"
+name = "my-tree2"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 
@@ -10,3 +10,4 @@ binding = "ASSETS"
 # Environment variables (if needed)
 [vars]
 ENVIRONMENT = "production"
+
