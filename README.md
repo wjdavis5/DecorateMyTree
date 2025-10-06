@@ -83,6 +83,27 @@ Build for production:
 npm run build:prod
 ```
 
+## Testing
+
+The application has comprehensive test coverage with unit tests and E2E tests.
+
+Run unit tests:
+```bash
+npm run test:unit
+```
+
+Run E2E tests with Playwright:
+```bash
+npm run test:e2e
+```
+
+Run all tests:
+```bash
+npm run test:all
+```
+
+See [TESTING.md](./TESTING.md) for detailed testing documentation.
+
 ## Deployment
 
 Deploy to Cloudflare Workers:
