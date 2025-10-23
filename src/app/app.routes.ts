@@ -5,8 +5,7 @@ import { TreeDecoratorComponent } from './components/tree-decorator/tree-decorat
 import { HomeComponent } from './components/home/home.component';
 
 export const routes: Routes = [
-  { path: '', component: TreeCreatorComponent },
-  { path: 'home', component: HomeComponent },
+  { path: '', component: HomeComponent },
   { path: 'auth', component: AuthComponent },
   { path: 'create', component: TreeCreatorComponent },
   { path: 'decorator/:id', component: TreeDecoratorComponent },

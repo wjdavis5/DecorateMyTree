@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatIconModule } from '@angular/material/icon';
 import { OrnamentDesign } from '../../services/ornament.service';
 
 interface DialogData {
@@ -20,13 +21,22 @@ interface DialogData {
     MatButtonModule,
     MatCardModule,
     MatGridListModule,
-    MatTabsModule
+    MatTabsModule,
+    MatIconModule
   ],
   template: `
-    <h2 mat-dialog-title>Select an Ornament</h2>
+    <h2 mat-dialog-title>
+      <mat-icon>auto_awesome</mat-icon>
+      Select an Ornament
+    </h2>
     <mat-dialog-content>
-      <mat-tab-group>
-        <mat-tab *ngFor="let type of ornamentTypes" [label]="type">
+      <p class="dialog-description">Choose a beautiful ornament to add to the tree</p>
+      <mat-tab-group animationDuration="300ms">
+        <mat-tab *ngFor="let type of ornamentTypes">
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">{{ getTypeIcon(type) }}</mat-icon>
+            {{ type }}
+          </ng-template>
           <mat-grid-list cols="3" rowHeight="1:1" class="ornament-grid">
             <mat-grid-tile *ngFor="let ornament of getOrnamentsByType(type)">
               <mat-card
@@ -36,11 +46,14 @@ interface DialogData {
                 <mat-card-content>
                   <div
                     class="ornament-preview"
-                    [style.background-color]="ornament.color">
-                    {{ getOrnamentEmoji(ornament.geometry) }}
+                    [style.background]="getOrnamentGradient(ornament.color)">
+                    <span class="ornament-emoji">{{ getOrnamentEmoji(ornament.geometry) }}</span>
                   </div>
                   <mat-card-title>{{ ornament.name }}</mat-card-title>
                 </mat-card-content>
+                <div class="check-icon" *ngIf="selectedOrnament === ornament">
+                  <mat-icon>check_circle</mat-icon>
+                </div>
               </mat-card>
             </mat-grid-tile>
           </mat-grid-list>
@@ -48,15 +61,17 @@ interface DialogData {
       </mat-tab-group>
     </mat-dialog-content>
     <mat-dialog-actions>
-      <button mat-button (click)="onCancel()"
-      style="margin-right: 10px;background-color: red;color: white;"
-      >Cancel</button>
+      <button mat-button (click)="onCancel()">
+        <mat-icon>close</mat-icon>
+        Cancel
+      </button>
       <button
         mat-raised-button
         color="primary"
         [disabled]="!selectedOrnament"
         (click)="onConfirm()">
-        Select
+        <mat-icon>check</mat-icon>
+        Add to Tree
       </button>
     </mat-dialog-actions>
   `,
@@ -67,10 +82,33 @@ interface DialogData {
     }
 
     h2 {
+      display: flex;
+      align-items: center;
+      gap: 12px;
       margin: 0;
-      padding: 16px;
-      background-color: #f5f5f5;
+      padding: 20px;
+      background: linear-gradient(135deg, #1976d2 0%, #2196f3 100%);
+      color: white;
+      font-weight: 400;
+    }
+
+    h2 mat-icon {
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+    }
+
+    .dialog-description {
+      padding: 16px 20px;
+      margin: 0;
+      background: #f5f5f5;
+      color: rgba(0, 0, 0, 0.7);
       border-bottom: 1px solid #e0e0e0;
+      text-align: center;
+    }
+
+    .tab-icon {
+      margin-right: 8px;
     }
 
     .ornament-grid {
@@ -97,15 +135,50 @@ interface DialogData {
     }
 
     .ornament-preview {
-      width: 60px;
-      height: 60px;
+      width: 70px;
+      height: 70px;
       border-radius: 50%;
       margin: 8px auto;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 24px;
-      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ornament-preview::before {
+      content: '';
+      position: absolute;
+      top: 10%;
+      left: 20%;
+      width: 30%;
+      height: 30%;
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 50%;
+      filter: blur(8px);
+    }
+
+    .ornament-emoji {
+      font-size: 32px;
+      position: relative;
+      z-index: 1;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    }
+
+    .check-icon {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 10;
+    }
+
+    .check-icon mat-icon {
+      color: #4caf50;
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
     }
 
     mat-card-title {
@@ -189,6 +262,19 @@ export class OrnamentSelectorComponent {
       case 'dreidel': return '🎲';
       default: return '🎄';
     }
+  }
+
+  getTypeIcon(type: string): string {
+    switch (type) {
+      case 'Christmas': return 'celebration';
+      case 'Hanukkah': return 'synagogue';
+      case 'Kwanzaa': return 'local_fire_department';
+      default: return 'star';
+    }
+  }
+
+  getOrnamentGradient(color: string): string {
+    return `radial-gradient(circle at 30% 30%, ${color}ee, ${color}88)`;
   }
 
   selectOrnament(ornament: OrnamentDesign) {

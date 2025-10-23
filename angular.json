@@ -51,7 +51,15 @@
                 }
               ],
               "outputHashing": "all",
-              "serviceWorker": "ngsw-config.json"
+              "serviceWorker": "ngsw-config.json",
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
+                "fonts": false
+              }
             },
             "development": {
               "optimization": false,
@@ -79,6 +87,7 @@
         "test": {
           "builder": "@angular-devkit/build-angular:karma",
           "options": {
+            "karmaConfig": "karma.conf.js",
             "polyfills": [
               "zone.js",
               "zone.js/testing"
@@ -94,7 +103,8 @@
             "styles": [
               "src/styles.scss"
             ],
-            "scripts": []
+            "scripts": [],
+            "browsers": "ChromeHeadless"
           }
         }
       }

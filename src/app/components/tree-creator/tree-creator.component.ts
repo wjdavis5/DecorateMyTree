@@ -151,15 +151,32 @@ export class TreeCreatorComponent implements AfterViewInit {
     this.controls.minDistance = 3;
     this.controls.maxDistance = 10;
 
-    // Add lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    // Enhanced lighting setup
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     this.scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(5, 5, 5);
-    this.scene.add(directionalLight);
+    // Main directional light
+    const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    mainLight.position.set(5, 5, 5);
+    mainLight.castShadow = true;
+    this.scene.add(mainLight);
 
-    this.camera.position.z = 5;
+    // Fill light
+    const fillLight = new THREE.DirectionalLight(0x7ec0ee, 0.3);
+    fillLight.position.set(-5, 3, -5);
+    this.scene.add(fillLight);
+
+    // Rim light for depth
+    const rimLight = new THREE.DirectionalLight(0xffd700, 0.2);
+    rimLight.position.set(0, -2, -5);
+    this.scene.add(rimLight);
+
+    // Enable shadows
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    this.camera.position.set(0, 2, 5);
+    this.camera.lookAt(0, 2, 0);
 
     // Handle window resize
     window.addEventListener('resize', () => {
@@ -183,39 +200,192 @@ export class TreeCreatorComponent implements AfterViewInit {
   }
 
   private createChristmasTree() {
-    // Create tree trunk
-    const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.2, 1, 32);
-    const trunkMaterial = new THREE.MeshPhongMaterial({
-      color: 0x8B4513,
-      shininess: 30
+    // Create tree trunk with better texture
+    const trunkGeometry = new THREE.CylinderGeometry(0.25, 0.3, 1.2, 32);
+    const trunkMaterial = new THREE.MeshStandardMaterial({
+      color: 0x6d4c41,
+      roughness: 0.8,
+      metalness: 0.1
     });
     const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-    trunk.position.y = -0.5;
+    trunk.position.y = -0.6;
+    trunk.castShadow = true;
+    trunk.receiveShadow = true;
     this.scene.add(trunk);
 
-    // Create tree layers
-    const layers = 4;
-    const treeColor = 0x228B22;
+    // Create tree layers with better materials and varied colors
+    const layers = 5;
+    const baseColor = 0x1b5e20;
 
     for (let i = 0; i < layers; i++) {
-      const coneGeometry = new THREE.ConeGeometry(
-        1.5 - (i * 0.3),
-        1.5,
-        32
-      );
-      const coneMaterial = new THREE.MeshPhongMaterial({
-        color: treeColor,
-        shininess: 15
+      const radius = 1.8 - (i * 0.32);
+      const height = 1.4;
+      const coneGeometry = new THREE.ConeGeometry(radius, height, 32);
+      
+      // Vary the green color slightly for each layer for more depth
+      const colorVariation = Math.floor(Math.random() * 0x101010);
+      const layerColor = baseColor + colorVariation;
+      
+      const coneMaterial = new THREE.MeshStandardMaterial({
+        color: layerColor,
+        roughness: 0.7,
+        metalness: 0.1,
+        flatShading: false
       });
+      
       const cone = new THREE.Mesh(coneGeometry, coneMaterial);
-      cone.position.y = i * 1;
+      cone.position.y = i * 0.9 + 0.2;
+      cone.castShadow = true;
+      cone.receiveShadow = true;
       this.scene.add(cone);
     }
+
+    // Add a golden star on top
+    this.addTreeTopper();
+    
+    // Add sparkle lights
+    this.addSparkleLights();
+    
+    // Add snow particles
+    this.addSnowEffect();
+  }
+
+  private addTreeTopper() {
+    // Create a 5-pointed star
+    const starPoints = [];
+    const outerRadius = 0.3;
+    const innerRadius = 0.15;
+    const points = 5;
+
+    for (let i = 0; i < points * 2; i++) {
+      const radius = i % 2 === 0 ? outerRadius : innerRadius;
+      const angle = (i / (points * 2)) * Math.PI * 2 - Math.PI / 2;
+      starPoints.push(new THREE.Vector2(
+        Math.cos(angle) * radius,
+        Math.sin(angle) * radius
+      ));
+    }
+
+    const starShape = new THREE.Shape(starPoints);
+    const starGeometry = new THREE.ExtrudeGeometry(starShape, {
+      depth: 0.1,
+      bevelEnabled: true,
+      bevelThickness: 0.02,
+      bevelSize: 0.02,
+      bevelSegments: 3
+    });
+
+    const starMaterial = new THREE.MeshStandardMaterial({
+      color: 0xffd700,
+      metalness: 0.9,
+      roughness: 0.1,
+      emissive: 0xffaa00,
+      emissiveIntensity: 0.5
+    });
+
+    const star = new THREE.Mesh(starGeometry, starMaterial);
+    star.position.y = 5;
+    star.rotation.z = 0;
+    this.scene.add(star);
+  }
+
+  private addSparkleLights() {
+    // Add small colorful lights around the tree
+    const lightColors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff];
+    const numLights = 30;
+
+    for (let i = 0; i < numLights; i++) {
+      const angle = (i / numLights) * Math.PI * 2;
+      const layer = Math.floor(i / 6);
+      const radius = 1.5 - (layer * 0.32);
+      const height = layer * 0.9 + 0.2;
+
+      const light = new THREE.PointLight(
+        lightColors[i % lightColors.length],
+        0.5,
+        2
+      );
+      
+      light.position.set(
+        Math.cos(angle) * radius * 0.7,
+        height + (Math.random() - 0.5) * 0.3,
+        Math.sin(angle) * radius * 0.7
+      );
+
+      this.scene.add(light);
+
+      // Add small sphere to visualize the light
+      const lightGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+      const lightMaterial = new THREE.MeshBasicMaterial({
+        color: lightColors[i % lightColors.length]
+      });
+      const lightMesh = new THREE.Mesh(lightGeometry, lightMaterial);
+      lightMesh.position.copy(light.position);
+      this.scene.add(lightMesh);
+    }
+  }
+
+  private snowParticles: THREE.Points | null = null;
+
+  private addSnowEffect() {
+    const particleCount = 200;
+    const particles = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const velocities = [];
+
+    for (let i = 0; i < particleCount; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * 10;
+      positions[i * 3 + 1] = Math.random() * 10;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
+      
+      velocities.push({
+        x: (Math.random() - 0.5) * 0.01,
+        y: -0.02 - Math.random() * 0.02,
+        z: (Math.random() - 0.5) * 0.01
+      });
+    }
+
+    particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    const particleMaterial = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 0.08,
+      transparent: true,
+      opacity: 0.8,
+      sizeAttenuation: true
+    });
+
+    this.snowParticles = new THREE.Points(particles, particleMaterial);
+    this.snowParticles.userData['velocities'] = velocities;
+    this.scene.add(this.snowParticles);
+  }
+
+  private updateSnow() {
+    if (!this.snowParticles) return;
+
+    const positions = this.snowParticles.geometry.attributes['position'].array as Float32Array;
+    const velocities = this.snowParticles.userData['velocities'];
+
+    for (let i = 0; i < positions.length / 3; i++) {
+      positions[i * 3] += velocities[i].x;
+      positions[i * 3 + 1] += velocities[i].y;
+      positions[i * 3 + 2] += velocities[i].z;
+
+      // Reset particle if it falls below a threshold
+      if (positions[i * 3 + 1] < -2) {
+        positions[i * 3 + 1] = 8;
+        positions[i * 3] = (Math.random() - 0.5) * 10;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
+      }
+    }
+
+    this.snowParticles.geometry.attributes['position'].needsUpdate = true;
   }
 
   private animate() {
     requestAnimationFrame(() => this.animate());
     this.controls.update();
+    this.updateSnow();
     this.renderer.render(this.scene, this.camera);
   }
 
